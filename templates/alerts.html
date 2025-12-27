@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Alertes Email - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="alerts-page">
+    <h2>Alertes Email</h2>
+
+    <div class="alert-info">
+        <p>Recevez des alertes par email pour les vulnerabilites critiques et rapports hebdomadaires.</p>
+    </div>
+
+    <section class="report-section">
+        <h3>S'inscrire aux alertes</h3>
+        <form method="POST" id="subscribe-form">
+            <div class="form-group">
+                <label for="email">Votre adresse email *</label>
+                <input type="email" name="email" id="email" required placeholder="exemple@domaine.com">
+            </div>
+
+            <div class="form-group">
+                <label>Types d'alertes :</label>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" name="alert_critical" value="1" checked>
+                        <span>Vulnerabilites critiques (CVSS >= 9.0)</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="alert_high" value="1">
+                        <span>Vulnerabilites hautes (CVSS >= 7.0)</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="weekly_report" value="1" checked>
+                        <span>Rapport hebdomadaire</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="components">Composants suivis (optionnel)</label>
+                <input type="text" name="components" id="components" 
+                       placeholder="Docker, Kubernetes, Jenkins (separes par des virgules)">
+                <small>Laissez vide pour recevoir toutes les alertes</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary">S'inscrire aux alertes</button>
+        </form>
+    </section>
+
+    <section class="report-section">
+        <h3>Mes abonnements</h3>
+        <div id="subscriptions-list">
+            <p>Chargement...</p>
+        </div>
+    </section>
+</div>
+
+<style>
+.alert-info {
+    background: rgba(0, 212, 255, 0.1);
+    border-left: 4px solid var(--accent-blue);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border-radius: 5px;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    cursor: pointer;
+    padding: 0.8rem;
+    background: rgba(255, 215, 0, 0.05);
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.checkbox-group label:hover {
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+small {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    display: block;
+    margin-top: 0.3rem;
+}
+</style>
+
+<script>
+document.getElementById('subscribe-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = {
+        email: formData.get('email'),
+        alert_critical: formData.get('alert_critical') === '1',
+        alert_high: formData.get('alert_high') === '1',
+        weekly_report: formData.get('weekly_report') === '1',
+        components: formData.get('components')
+    };
+    
+    try {
+        const response = await fetch('/api/subscribe-alerts', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            alert('Inscription reussie ! Vous recevrez des alertes par email.');
+            e.target.reset();
+        } else {
+            alert('Erreur : ' + result.message);
+        }
+    } catch (error) {
+        alert('Erreur reseau : ' + error.message);
+    }
+});
+</script>
+{% endblock %}
